@@ -1,0 +1,166 @@
+import React, { useState } from 'react';
+
+const flujoClasificacion = {
+  inicio: {
+    question: '¿El ser vivo tiene células con núcleo (eucariota)?',
+    taxonLevel: 'Dominio',
+    yes: { next: 'eucariota_1', classification: { Dominio: 'Eukarya' } },
+    no: { next: null, classification: { Reino: 'Monera (Bacterias)' } },
+  },
+
+  eucariota_1: {
+    question: '¿Es un animal?',
+    taxonLevel: 'Reino',
+    yes: { next: 'animal_2', classification: { Reino: 'Animalia' } },
+    no: { next: 'planta_1', classification: { Reino: 'Plantae' } },
+  },
+
+  // Animalia
+  animal_2: {
+    question: '¿Tiene columna vertebral?',
+    taxonLevel: 'Filo',
+    yes: { next: 'animal_3', classification: { Filo: 'Chordata' } },
+    no: { next: 'animal_7', classification: { Filo: 'Invertebrados' } },
+  },
+  animal_3: {
+    question: '¿Tiene pelo o plumas?',
+    taxonLevel: 'Clase',
+    yes: { next: 'animal_4', classification: { Clase: 'Mammalia/Aves' } },
+    no: { next: 'animal_5', classification: { Clase: 'Otras clases de chordados' } },
+  },
+  animal_4: {
+    question: '¿Tiene pelo y alimenta a sus crías con leche?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Mammalia' } },
+    no: { next: null, classification: { Clase: 'Aves' } },
+  },
+  animal_5: {
+    question: '¿Tiene piel seca y escamosa?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Reptilia' } },
+    no: { next: 'animal_6', classification: { Clase: 'Anfibios o Peces' } },
+  },
+  animal_6: {
+    question: '¿Vive parte de su vida en agua y parte en tierra, con piel húmeda?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Amphibia' } },
+    no: { next: null, classification: { Clase: 'Peces' } },
+  },
+  animal_7: {
+    question: '¿Tiene cuerpo segmentado y patas articuladas?',
+    taxonLevel: 'Filo',
+    yes: { next: 'animal_8', classification: { Filo: 'Arthropoda' } },
+    no: { next: null, classification: { Filo: 'Otros filos (Porifera, Cnidaria, etc.)' } },
+  },
+  animal_8: {
+    question: '¿Tiene 6 patas y cuerpo dividido en cabeza, tórax y abdomen?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Insecta' } },
+    no: { next: 'animal_9', classification: { Clase: 'Otros artrópodos' } },
+  },
+  animal_9: {
+    question: '¿Tiene 8 patas y no tiene antenas?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Arácnida' } },
+    no: { next: null, classification: { Clase: 'Otros (Moluscos, etc.)' } },
+  },
+
+  // Plantae
+  planta_1: {
+    question: '¿La planta tiene raíces, tallos y hojas verdaderos?',
+    taxonLevel: 'División',
+    yes: { next: 'planta_2', classification: { División: 'Plantas vasculares' } },
+    no: { next: null, classification: { División: 'Briofitas (musgos)' } },
+  },
+  planta_2: {
+    question: '¿Produce flores?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Angiospermas (plantas con flores)' } },
+    no: { next: 'planta_3', classification: { Clase: 'Plantas sin flores' } },
+  },
+  planta_3: {
+    question: '¿Produce semillas pero no flores?',
+    taxonLevel: 'Clase',
+    yes: { next: null, classification: { Clase: 'Gimnospermas (plantas con semillas pero sin flores)' } },
+    no: { next: null, classification: { Clase: 'Pteridofitas (helechos)' } },
+  },
+};
+
+const Clasificador = () => {
+  const [currentNodeKey, setCurrentNodeKey] = useState('inicio');
+  const [fullClassification, setFullClassification] = useState({});
+
+  const currentNode = flujoClasificacion[currentNodeKey];
+
+  const handleResponse = (answer) => {
+    const updatedClassification = { ...fullClassification, ...currentNode[answer].classification };
+    setFullClassification(updatedClassification);
+
+    if (currentNode[answer].next) {
+      setCurrentNodeKey(currentNode[answer].next);
+    } else {
+      setCurrentNodeKey(null);
+    }
+  };
+
+  return (
+    <div className="p-4 max-w-xl mx-auto">
+      <h1 className="text-3xl font-bold mb-6 text-center">Clasificación Dicotómica</h1>
+
+      {currentNodeKey ? (
+        <>
+          <div className="mb-4 bg-blue-100 p-4 rounded-lg">
+            <p><strong>Nivel taxonómico actual:</strong> {currentNode.taxonLevel}</p>
+            <p><strong>Clasificación actual:</strong></p>
+            <ul className="list-disc list-inside">
+              {Object.entries(fullClassification).map(([nivel, valor]) => (
+                <li key={nivel}><strong>{nivel}:</strong> {valor}</li>
+              ))}
+            </ul>
+          </div>
+
+          <p className="mb-6 text-lg">{currentNode.question}</p>
+
+          <div>
+            {currentNode.yes && (
+              <button
+                onClick={() => handleResponse('yes')}
+                className="bg-green-500 text-white py-2 px-6 rounded mr-4"
+              >
+                Sí
+              </button>
+            )}
+            {currentNode.no && (
+              <button
+                onClick={() => handleResponse('no')}
+                className="bg-red-500 text-white py-2 px-6 rounded"
+              >
+                No
+              </button>
+            )}
+          </div>
+        </>
+      ) : (
+        <div className="bg-green-200 p-6 rounded-lg text-center">
+          <h2 className="text-2xl font-semibold mb-4">Clasificación final:</h2>
+          <ul className="list-disc list-inside text-lg">
+            {Object.entries(fullClassification).map(([nivel, valor]) => (
+              <li key={nivel}><strong>{nivel}:</strong> {valor}</li>
+            ))}
+          </ul>
+          <button
+            onClick={() => {
+              setCurrentNodeKey('inicio');
+              setFullClassification({});
+            }}
+            className="mt-6 bg-blue-600 text-white py-2 px-6 rounded"
+          >
+            Reiniciar
+          </button>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Clasificador;
